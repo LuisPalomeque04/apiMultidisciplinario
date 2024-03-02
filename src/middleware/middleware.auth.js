@@ -6,8 +6,7 @@ const verifyToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
-        req.usuarioId = undefined; // Establece req.usuarioId como undefined cuando no hay token
-        return next(); // Continuar al siguiente middleware
+        return next(); 
     }
 
     const parts = authHeader.split(' ');
@@ -24,6 +23,7 @@ const verifyToken = (req, res, next) => {
         }
 
         req.usuarioId = decoded.usuarioId;
+        req.usuarioRol = decoded.usuarioRol;
         next();
     });
 };

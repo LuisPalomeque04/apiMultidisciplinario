@@ -1,8 +1,10 @@
 const Usuario = require('../models/models_usuarios');
+const bcrypt = require('bcrypt');
+
 
 const obtenerUsuarios = async (req, res) => {
     try {
-        if (req.usuario.Nombre !== 'Administrador') {
+        if (req.usuarioRol !== 'Administrador') { 
             return res.status(403).json({ error: 'Permisos insuficientes para obtener usuarios' });
         }
 
@@ -15,8 +17,7 @@ const obtenerUsuarios = async (req, res) => {
 
 const obtenerUsuarioPorNumCuarto = async (req, res) => {
     try {
-        // Verificar si el usuario que realiza la solicitud es el Administrador
-        if (req.usuario.Nombre !== 'Administrador') {
+        if (req.usuarioRol !== 'Administrador') {
             return res.status(403).json({ error: 'Permisos insuficientes para obtener usuarios' });
         }
 
@@ -32,25 +33,23 @@ const obtenerUsuarioPorNumCuarto = async (req, res) => {
 
 const actualizarUsuario = async (req, res) => {
     try {
-        // Verificar si el usuario que realiza la solicitud es el Administrador
-        if (req.usuario.Nombre !== 'Administrador') {
+        if (req.usuarioRol !== 'Administrador') { 
             return res.status(403).json({ error: 'Permisos insuficientes para actualizar usuarios' });
         }
 
         const usuarioActualizado = await Usuario.findOneAndUpdate({ numCuarto: req.params.numCuarto }, req.body, { new: true });
         if (!usuarioActualizado) {
-            return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+            return res.status(404).json({ mensaje: 'Usuario no encontrado', error });
         }
         res.json({ usuario: usuarioActualizado });
     } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar el usuario' });
+        res.status(500).json({ error: 'Error al actualizar el usuario', });
     }
 };
 
 const eliminarUsuario = async (req, res) => {
     try {
-        // Verificar si el usuario que realiza la solicitud es el Administrador
-        if (req.usuario.Nombre !== 'Administrador') {
+        if (req.usuarioRol !== 'Administrador') {
             return res.status(403).json({ error: 'Permisos insuficientes para eliminar usuarios' });
         }
 
@@ -66,17 +65,40 @@ const eliminarUsuario = async (req, res) => {
 
 const agregarUsuario = async (req, res) => {
     try {
-        if (req.usuario.Nombre !== 'Administrador') {
+        if (req.usuarioRol !== 'Administrador') {
             return res.status(403).json({ error: 'Permisos insuficientes para agregar usuarios' });
         }
 
-        const nuevoUsuario = new Usuario(req.body);
+        const { contraseña, ...userData } = req.body;
+
+        const usuarioExistente = await Usuario.findOne({
+            $or: [
+                { numCelular: userData.numCelular },
+                { numEmergencia: userData.numEmergencia }
+            ]
+        });
+
+        if (usuarioExistente) {
+            return res.status(400).json({ error: 'Ya existe un usuario con el mismo número de celular o de emergencia.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(contraseña, 10);
+
+        const nuevoUsuario = new Usuario({
+            ...userData,
+            contraseña: hashedPassword,
+            rol: 'Rentador'
+        });
+
         await nuevoUsuario.save();
+
         res.status(201).json({ mensaje: 'Usuario creado correctamente', usuario: nuevoUsuario });
     } catch (error) {
+        console.error('Error al agregar el usuario:', error);
         res.status(500).json({ error: 'Error al agregar el usuario' });
     }
 };
+
 
 module.exports = {
     obtenerUsuarios,

@@ -25,6 +25,12 @@ const crearUsuarioAdministrador = async () => {
             console.log('El usuario administrador ya existe en la base de datos.');
             return;
         }
+        const numCelular = 1234567890;
+        const celularExistente = await Usuarios.findOne({ numCelular });
+        if (celularExistente) {
+            console.log('El número de celular ya está en uso.');
+            return;
+        }
 
         const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS);
         const hashedPassword = await bcrypt.hash('palomeque', saltRounds);
@@ -33,11 +39,11 @@ const crearUsuarioAdministrador = async () => {
             Nombre: 'Nadia',
             contraseña: hashedPassword, 
             correo: 'nadia@example.com',
-            numCelular: 1234567890,
+            numCelular: numCelular, 
             nombreEmergencia: 'Luis',
             numEmergencia: 1234567889,
             numCuarto: 255,
-            rol:'Administrador'
+            rol: 'Administrador'
         });
 
         await nuevoAdmin.save();
@@ -46,5 +52,6 @@ const crearUsuarioAdministrador = async () => {
         console.error('Error al crear el usuario administrador:', error);
     }
 };
+
 
 module.exports = connectDB;
