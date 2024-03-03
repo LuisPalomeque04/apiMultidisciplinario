@@ -22,7 +22,6 @@ const signin = async (req, res) => {
             return res.status(404).json({ message: 'Usuario no encontrado. Verifica los datos proporcionados.' });
         }
 
-        // Verificar que la contraseña almacenada esté hasheada correctamente
         const passwordMatch = await bcrypt.compare(contraseña.trim(), usuario.contraseña.trim());
         if (!passwordMatch) {
             console.log('La contraseña proporcionada es incorrecta.');
